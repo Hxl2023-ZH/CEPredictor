@@ -1,5 +1,5 @@
 ################################################################################
-#
+#                             CoAT tree analysis
 ################################################################################
 
 # phylogeny
@@ -28,7 +28,7 @@ library(dynamicTreeCut)
 
 set.seed(2026)
 #================================== tree Analysis ==============================
-setwd("~/Desktop/zhongke/Liu_metagenomic/Analysis/11_CoAT/MAGs/tree_analysis/")
+setwd("~/tree_analysis/")
 
 tree <- read.tree("data/merged_coat.treefile")
 tree
@@ -116,12 +116,12 @@ p_eps <-
   scale_x_discrete(limits = c("High", "Medium", "Low"))+
   
   stat_compare_means(
-    comparisons = my_comparisons,    # 指定要比较的组对
-    method = "wilcox.test",               # 检验方法
-    label = "p.signif",              # 显示显著性符号
-    hide.ns = FALSE,                 # 隐藏不显著的组间比较
-    bracket.size = 0.5,             # 调整显著性连线的粗细
-    step.increase = 0.15             # 让连线之间有一点间距，避免重叠
+    comparisons = my_comparisons,    
+    method = "wilcox.test",               
+    label = "p.signif",              
+    hide.ns = FALSE, 
+    bracket.size = 0.5,
+    step.increase = 0.15 
   )
 p_eps
 
@@ -144,7 +144,6 @@ pcoa_df <- data.frame(
 pcoa_df <- left_join(pcoa_df, meta, by = c("Sample" = "SequenceID"))
 
 ###=== k值判断
-# 自动判断最佳聚类数
 fviz_nbclust(as.matrix(dist_mat), FUN = hcut, method = "silhouette")
 fviz_nbclust(as.matrix(dist_mat), FUN = hcut, method = "gap_stat")
 
@@ -171,14 +170,12 @@ tbl <- table(cluster_df$Clade, meta$CE_potential)
 chisq.test(tbl)
 
 #富集分析
-# Clade 8 是否富集 High MAG？
 meta$Clade <- cluster_df$Clade
 target <- "8"
 
 tbl2 <- table(meta$Clade == target, meta$CE_potential == "High")
 tbl2
 fisher.test(tbl2)
-# p-value = 0.01956
 
 df <- as.data.frame(tbl)
 
@@ -466,24 +463,6 @@ umap_df <- data.frame(
   UMAP2 = umap_res$layout[,2]
 )
 
-#-------
-#umap_res <- umap(
-#  dist_mat,
-#  metric = "euclidean",
-#  n_neighbors = 30,
-#  min_dist = 0.15,
-#  spread = 1,
-#  n_components = 2,
-#  verbose = TRUE
-#)
-
-#umap_df <- data.frame(
-#  SequenceID = rownames(dist_mat),
-#  UMAP1 = umap_res[,1],
-#  UMAP2 = umap_res[,2]
-#)
-
-
 umap_df <- left_join(umap_df, meta, by = "SequenceID")
 ### 统计检验
 #dist_matrix <- dist(dist_mat)
@@ -629,10 +608,10 @@ p_umap <- p_umap + annotate("text", x = 16, y = 16, label = anno_text,
 
 p_umap
 
-ggsave("results/CoAT_Fig05_UMAP_CE_clusters_20260805.pdf", p_umap, width = 7, height = 5)
+ggsave("", p_umap, width = 7, height = 5)
 
 
-write.table(umap_df, "CoAT_UMAP_df.txt", row.names = FALSE, sep = '\t', quote = FALSE)
+write.table(umap_df, "", row.names = FALSE, sep = '\t', quote = FALSE)
 
 
 
