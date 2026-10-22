@@ -5,16 +5,13 @@
 # 2026-04-22
 # Python 3.9.6
 
-# 该脚本用于将从RegPrecise数据库（https://regprecise.lbl.gov/collection_tffam.jsp?tffamily_id=56）中下载的TFBS序列按物种进行拆分
-
-
 import re
 import os
 import logging
 from collections import defaultdict
 from datetime import datetime
 
-new_dir = "/Users/hxl/Desktop/zhongke/Liu_metagenomic/Analysis/CoAT/Refseq_protein/split_faa/" 
+new_dir = "/Users/faa_files/" 
 os.chdir(new_dir)
 
 def setup_logger(log_file=None):
