@@ -1,17 +1,9 @@
 ################################################################################
-#                           CE-MAGs Predictor Version 03
+#                           CE-MAGs Predictor Version 02
 ################################################################################
 # Xinliang Hu
 # 20260424
 # R version 4.5.2
-
-## pipline
-# 1.数据预处理模块
-# 2.评分与筛选模块
-# 3.机器学习模型构建模块
-# 4.外部数据集验证模块
-# 5.统计与绘图模块
-
 
 ### load R packages
 library(tidyverse)
@@ -36,19 +28,15 @@ library(circlize)
 library(uwot)
 
 ############################## 1.数据预处理模块 ################################
-setwd('~/Desktop/zhongke/Liu_metagenomic/Analysis/06_ML/')
+setwd('')
 
-raw_df <- fread("MAGs_all_merged_annotation_for_ML_0331.txt")
+raw_df <- fread("MAGs_all_merged_annotation.txt")
 
 #过滤低质量MAG
-raw_df_medium <- raw_df %>% 
-  filter(Quality != "Low") %>% select(-c('H2ase','BM','ACOCT','HadABC','CarC','HypCDEF'))
+#raw_df_medium <- raw_df %>% filter(Quality != "Low") %>% select(-c('H2ase','BM','ACOCT','HadABC','CarC','HypCDEF'))
 
 dim(raw_df_medium)
-#[1] 1365   32
 table(raw_df_medium$Quality)
-#High Medium 
-# 796    569
 
 raw_data <- raw_df_medium %>% select(-"Quality")
 MAGs <- raw_data$MAGs
@@ -150,13 +138,6 @@ write.table(rule_table, "results/tables/rule_filter.txt", sep="\t",row.names=FAL
 
 
 ################################# 3.机器学习模型构建模块 #######################
-# 训练模式中通过 rBOX > 0.6 生成伪标签，这是一个基于代谢模块完整性的启发式规则，
-# 而非人工标记。这种设计是由于真值标签难以获取，转而使用生物信息学判断来引导
-# 模型学习更细微的基因组合模式。
-
-# 模块得分方法只能给出规则化的分数，而机器学习可以捕捉更复杂的非线性基因共现模式。
-# 用伪标签训练模型后，预测结果（ml_prob）不仅依赖于那几个关键基因，
-# 还能整合其他辅助基因的信息，提升鲁棒性。
 
 feature_matrix <- as.matrix(gene_binary[,!colnames(gene_binary) %in% core_genes])
 
@@ -262,8 +243,6 @@ result_table <- data.frame(
 )
 
 table(result_table$class)
-#High    Low Medium 
-# 170    839    356 
 
 write.table(result_table,
             "results/tables/CEPS_prediction.txt",
@@ -598,87 +577,6 @@ ggsave("results/figures/Figure03_extern_validation_PRC_curve.pdf", p_pr_ref, wid
 
 
 ############################# 5.统计与绘图模块 #################################
-### 5.1.Gene heatmap
-# 构建 gene → module 映射
-gene_module_map <- list(
-  
-  rBOX = c("ACAT","HAD","ECH","BCD","EtfAB"),
-  product_release = c("PTB","BUK","CoAT","ACT"),
-  Ethanol_Lactate_metabolism = c("LDH","LacP","ADH","ADA"),
-  electron_transfer = c("RnfABCDEG","EchABCDEF"),
-  sugar_metabolism = c("XI","XK","XylT","TK","TA")
-  
-)
-
-# 绘图
-# 按CEPS排序
-order_mag <- order(CEPS, decreasing=TRUE)
-mat <- as.matrix(gene_binary[order_mag,])
-class_sorted <- class[order_mag]
-
-# 行注释
-row_anno <- rowAnnotation(
-  Class = class_sorted,
-  col = list(
-    Class = c(
-      Low="#00688B",
-      Medium="#efd7b6",
-      High="#CD5B45"
-    )
-  )
-)
-
-# 列注释（模块）
-gene_module <- rep("Other", ncol(mat))
-names(gene_module) <- colnames(mat)
-
-for(m in names(gene_module_map)){
-  gene_module[colnames(mat) %in% gene_module_map[[m]]] <- m
-}
-
-module_col <- c(
-  rBOX = "#FDD0A2",
-  product_release = "#FDAE61",
-  Ethanol_Lactate_metabolism = "#66C2A5",
-  electron_transfer = "#44AA99",
-  sugar_metabolism = "#F46D43",
-  Other = "#ABDDA4"
-)
-
-column_anno <- HeatmapAnnotation(
-  Module = gene_module,
-  col = list(Module = module_col),
-  annotation_name_side = "left"
-)
-
-# 绘图
-pdf("results/figures/Figure04_gene_heatmap.pdf", width=10, height=10)
-
-Heatmap(
-  mat,
-  
-  cluster_rows = FALSE,
-  cluster_columns = TRUE,
-  
-  show_row_names = FALSE,
-  show_column_names = TRUE,
-  
-  left_annotation = row_anno,
-  top_annotation = column_anno,
-  
-  column_split = gene_module,
-  
-  col = colorRamp2(
-    c(0,1),
-    c("#F0F0F0","#CD5B45")
-  ),
-  
-  heatmap_legend_param = list(
-    title = "Gene presence"
-  )
-)
-
-dev.off()
 
 #===============================6.2 PCA plot ===================================  
 pca <- PCA(combined_matrix,graph=FALSE)
@@ -771,12 +669,7 @@ pca_scores <- pca$ind$coord
 dist_matrix <- dist(pca_scores)
 
 adonis2_res <- adonis2(dist_matrix ~ class2, data = pca_df, permutations = 999)
-adonis2_res
-#adonis2(formula = dist_matrix ~ class2, data = pca_df, permutations = 999)
-#Df SumOfSqs     R2      F Pr(>F)    
-#Model       1   2257.2 0.1351 219.47  0.001 ***
-#  Residual 1405  14449.8 0.8649                  
-#Total    1406  16706.9 1.0000                  
+adonis2_res              
 
 pseudo_f <- round(adonis2_res$F[1], 3)
 pval <- adonis2_res$`Pr(>F)`[1]
@@ -791,9 +684,6 @@ p_pcoa_add
 ggsave("results/figures/Figure05_PCoA_substrate.pdf",p_pcoa_add,width=7,height=5)
 
 #=============================== 6.3.UMAP ======================================
-# Bray-Curtis 是生态距离
-# UMAP底层使用近邻图优化
-# uwot没有实现Bray-Curtis
 umap_res <- umap(combined_matrix, n_neighbors = 15, min_dist = 0.1, metric = 'euclidean')
 
 umap_df <- data.frame(
@@ -1001,9 +891,7 @@ pr_ens <- pr.curve(
 proc_df <- rbind(
   
   data.frame(Recall = pr_xgb$curve[,1], Precision = pr_xgb$curve[,2], model = "XGBoost"),
-  
   data.frame(Recall = pr_rf$curve[,1], Precision = pr_rf$curve[,2], model = "RandomForest"),
-  
   data.frame(Recall = pr_ens$curve[, 1], Precision = pr_ens$curve[, 2], model = "Ensemble")
   
 )
@@ -1113,348 +1001,3 @@ p_xgb
 ggsave("results/figures/Figure12_XGB_importance.pdf", p_xgb, width=5, height=5)
 
 #################################### END #######################################
-
-
-################################# CEPS阈值确定 #################################
-
-
-p1 <- ggplot(result_table,aes(x=CEPS))+
-  
-  geom_histogram(
-    aes(y=..density..),
-    bins=50,
-    fill="#00688B",
-    color="black"
-  ) +
-  
-  geom_density(
-    color='black',
-    linewidth=0.7
-  )+
-  
-  geom_vline(
-    xintercept=c(0.6),
-    linetype="dashed",
-    color="#999999",
-    linewidth=1
-  )+
-  scale_x_continuous(breaks = c(0.20, 0.40, 0.60, 0.80, 1.00))+
-  scale_y_continuous(expand = c(0.01, 0.001))+
-  
-  theme_bw(base_size = 16)+
-  theme(
-    panel.grid = element_blank(),
-    axis.title = element_text(face="bold")
-  )+
-  
-  xlab("Chain Elongation Potential Score")+
-  ylab("Number of MAGs")
-p1
-ggsave("results/figures/Figure13_CEPS_Density.pdf",p1, width=5, height=5)
-
-### CEPS vs rBOX模块完整度
-p4 <- ggplot(module_matrix,
-             aes(x=rBOX,y=CEPS))+
-  
-  geom_jitter(
-    size=1.5,
-    width = 0.02,
-    alpha=0.7
-  )+
-  
-  geom_smooth(
-    method="lm",
-    color="#00688B"
-  )+
-  
-  geom_hline(
-    yintercept=c(0.6, 0.5),
-    linetype="dashed",
-    color="#999999"
-  )+
-  scale_y_continuous(breaks = c(0.20, 0.40, 0.50, 0.60, 0.80, 1.00)) +
-  
-  theme_bw(base_size = 16)+
-  theme(
-    panel.grid = element_blank(),
-    axis.title = element_text(face="bold")
-  )+
-  
-  xlab("rBOX module completeness")+
-  ylab("Chain Elongation Potential Score")
-
-p4
-
-p4 <- p4 + stat_cor(method = "pearson",
-           label.x.npc = "left",
-           label.y.npc = "top",
-           aes(label = paste(after_stat(rr.label), 
-                             after_stat(p.label), 
-                             sep = "~`,`~")))
-
-ggsave("results/figures/Figure14_CEPS_vs_rBOX.pdf",p4, width=5, height=5)
-
-
-
-
-### ECDF 曲线（经验累积分布曲线）
-#ECDF（Empirical Cumulative Distribution Function）可以观察 分布变化速度。
-#如果某一段 CEPS 区间增长速度明显变化，就可能是分界点。
-# ECDF slope change indicates transition of CEPS distribution
-
-p_ecdf <- ggplot(data.frame(CEPS), aes(x=CEPS)) +
-  
-  stat_ecdf(
-    geom="step",
-    color="#00688B",
-    linewidth=1.0
-  ) +
-  
-  geom_vline(
-    xintercept=c(0.8,0.85),
-    linetype="dashed",
-    color="#999999"
-  ) +
-  scale_x_continuous(breaks = c(0.20, 0.40, 0.60, 0.80, 0.85, 1.00))+
-  
-  theme_bw(base_size = 16)+
-  theme(
-    panel.grid = element_blank(),
-    axis.title = element_text(face="bold")
-  )+
-  
-  xlab("Chain Elongation Potential Score") +
-  ylab("Cumulative probability")
-
-p_ecdf
-
-ggsave("results/figures/Figure15_CEPS_ECDF_curve.pdf",p_ecdf, width=5, height=5)
-
-#################################### END #######################################
-
-
-
-set.seed(123)
-
-group_num <- c(
-  "MAG" = 1,
-  "Reference" = 2
-)
-
-tp3$x_jitter <-
-  group_num[tp3$group] +
-  runif(nrow(tp3), -0.15, 0.15)
-
-ceps_ds <- ggplot(tp3) +
-  
-  geom_boxplot(
-    aes(group, CEPS),
-    outlier.shape = NA,
-    fill = NA,
-    color = "grey50",
-    linewidth = 0.6
-  ) +
-  
-  geom_point(
-    aes(
-      x = x_jitter,
-      y = CEPS,
-      fill = Type
-    ),
-    shape = 21,
-    color = "black",  stroke = 0.5,
-    size = 1.6,
-    width = 0.25
-  ) +
-  
-  scale_fill_manual(
-    name = "CE-Type",
-    breaks = c("CE-C6","CE-C4", "non-CE", "Other"),
-    values = c( "#CD5B45", "#efe6c1", '#C5B8C6', "#BBBBBB" ))+
-  
-  geom_text_repel(
-    data = tp3_reference_points,
-    aes(
-      x = x_jitter,
-      y = CEPS,
-      label = label_annotation
-    ),
-    seed = 123,
-    #nudge_x = 0.25,
-    #direction = "y",
-    force = 4,
-    point.padding = 0.2,
-    box.padding = 0.4,
-    segment.color = "grey40",
-    segment.size = 0.3,
-    max.overlaps = Inf
-  )+
-  
-  theme_bw(base_size = 16)+
-  theme(
-    panel.grid = element_blank(),
-    axis.title.x = element_blank(),
-    legend.position = "",
-    axis.title = element_text(face="bold")
-  )+
-  
-  scale_x_discrete(labels = c("MAG" = "MAG\n(n=1365)",
-                              "Reference" = "Reference\n(n=42) "
-  ))+
-  scale_y_continuous(breaks = c(0.00, 0.20, 0.40, 0.60, 0.80, 1.00))+
-  
-  geom_hline(yintercept = c(0.6, 0.8), 
-             linetype = "dashed", color = "gray", linewidth = 0.8)+
-  #xlab("")+
-  ylab("Chain Elongation Potential Score")
-
-#==================== PCoA绘图部分优化 =====================
-library(vegan)
-library(ape)
-library(uwot)
-
-
-### Distance matrix
-dist_matrix <- vegdist(
-  combined_matrix,
-  method = "bray"
-)
-
-pca <- ape::pcoa(dist_matrix)
-
-pca_coord <- as.data.frame(
-  pca$vectors[,1:5]
-)
-
-colnames(pca_coord)[1:5] <- 
-  c("Dim.1","Dim.2","Dim.3","Dim.4","Dim.5")
-
-pca_coord$MAG <- rownames(combined_matrix)
-
-pca_coord <- merge(
-  pca_coord,
-  tp3,
-  by="MAG",
-  all=TRUE
-)
-
-
-all_class <- rep("Low",length(pca_coord$CEPS))
-
-all_class[tp3$CEPS > 0.60] <- "Medium"
-all_class[tp3$CEPS > 0.80] <- "High"
-
-
-pca_coord$class <- all_class
-
-pca_df <- pca_coord %>% 
-  select(-c("Dim.3","Dim.4","Dim.5")) %>%
-  rename(
-    Dim1="Dim.1",
-    Dim2="Dim.2"
-  )
-
-reference_points <- pca_df[pca_df$group=="Reference",]
-reference_genomes$MAG == reference_points$MAG
-reference_points$label_annotation <- reference_genomes$label_annotation
-
-
-mag_points <- pca_df[pca_df$group=="MAG",]
-
-write.table(pca_df, "pca_df.txt", quote = FALSE, sep = '\t', row.names = TRUE)
-
-p_pcoa <- ggplot(pca_df,aes(x = Dim1,y = Dim2,color = class))+
-  
-  geom_point(size = 1.5, alpha = 0.7)+
-  
-  scale_colour_manual(
-    name = "CE-Potential",
-    breaks = c("High","Medium", "Low"),
-    values = c(
-      "High"="#4575B4",
-      "Medium"="#91BFDB",
-      "Low"="grey75"#d9d9d9
-    ))+
-  
-  theme_bw(base_size = 16)+
-  theme(
-    panel.grid = element_blank(),
-    axis.title = element_text(face="bold")
-  )+
-  
-  xlab("PCoA1")+
-  ylab("PCoA2")+
-  
-  theme(legend.position="right")
-
-p_pcoa
-
-
-p_pcoa_add <- p_pcoa +
-  
-  geom_point(data = reference_points, alpha=1)+
-  
-  geom_label_repel(
-    data = reference_points,
-    aes(label = label_annotation),
-    size = 2,
-    color = "black",
-    fill = "white",
-    segment.color = "black",
-    segment.size = 0.4,
-    box.padding = 0.5,
-    max.overlaps = 100
-  )
-
-p_pcoa_add
-
-
-### PERMANOVA
-pca_df$class2 <- factor(
-  ifelse(
-    pca_df$class %in% c("High","Medium"),
-    "High/Medium",
-    "Low"
-  ),
-  levels=c("High/Medium","Low")
-)
-
-
-adonis2_res <- adonis2(
-  dist_matrix ~ class2,
-  data=pca_df,
-  permutations=999
-)
-
-adonis2_res
-
-pseudo_f <- round(adonis2_res$F[1],3)
-
-r2 <- round(adonis2_res$R2[1],3)
-
-pval <- adonis2_res$`Pr(>F)`[1]
-
-
-p_label <- ifelse(
-  pval < 0.001,
-  "<0.001",
-  paste0("=",round(pval,3))
-)
-
-
-anno_text <- paste0(
-  "PERMANOVA\n",
-  "Pseudo-F = ",pseudo_f,
-  "\nR² = ",r2,
-  "\np ",p_label
-)
-
-p_pcoa_add <- p_pcoa_add +
-  annotate("text", x = Inf, y = Inf, label = anno_text,
-           hjust = 1.1, vjust = 1.5, size = 4, color = "black")
-
-p_pcoa_add
-
-ggsave("results/figures/Figure05_PCoA_Bray_substrate.pdf",p_pcoa_add,width=7,height=5)
-
-
