@@ -161,6 +161,3 @@ Several considerations are important when interpreting predictions:
 
 Citation information will be provided upon publication or release of the associated manuscript.
 
-## License
-
-License information to be specified by the project maintainers.
