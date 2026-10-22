@@ -79,14 +79,12 @@
 #│   └── ...
 #└── output/
 
-setwd('~/Desktop/zhongke/Liu_metagenomic/Analysis/09_Rex_TF/fimo/TFBS_analysis/local/')
+setwd('~/TFBS_analysis/local/')
 
 library(dplyr)
 library(stringr)
 library(ggplot2)
 library(GenomicRanges)
-
-#mag_id = "GCA_000185505_pos"
 
 #============== core function
 process_MAGs <- function(mag_id, base_dir='.') {
@@ -457,12 +455,5 @@ ggsave("output/Fig_meta_loess.pdf", p_meta2, width=6, height=4)
 
 
 ##################################### END ######################################
-
-
-
-
-
-
-
 
 
