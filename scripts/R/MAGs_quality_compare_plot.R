@@ -4,7 +4,7 @@ library(ggplot2)
 library(dplyr)
 library(ggpubr)
 
-setwd("/Users/hxl/Desktop/zhongke/Liu_metagenomic/Analysis/03_Bining/")
+setwd("")
 
 df <- read.delim("MAGs_score_public_in-house.txt", check.names = F, header = T)
 dim(df)
