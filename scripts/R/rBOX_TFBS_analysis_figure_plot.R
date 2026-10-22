@@ -5,7 +5,6 @@
 # 2026
 # R 4.5.2
 
-# Motif analyses were restricted to promoter regions (-300 to +100 bp relative to TSS) to focus on regulatory elements.
 
 library(tidyverse)
 library(ggplot2)
@@ -14,13 +13,11 @@ library(ggrepel)
 library(rstatix)
 library(broom)
 
-setwd('~/Desktop/zhongke/Liu_metagenomic/Analysis/09_Rex_TF/fimo/TFBS_analysis/')
+setwd('~/TFBS_analysis/')
 
 dat <- read.table("MAG_rex-TFBS_merged_table.txt", header=TRUE, sep="\t", stringsAsFactors=FALSE)
 
 table(dat$module)
-# ACAT   BCD   ECH EtfAB   HAD 
-# 353   161     9   144   183 
 
 dat <- dat %>% filter(module != "ECH") 
 
@@ -176,28 +173,6 @@ ggsave("Rex_Fig01B_scatter_TSS.pdf", p1B, width=9, height=5)
 
 
 #============================== Figure 02A =====================================
-# “High CE genes show stronger enrichment near TSS”
-# Rex motif 是否在不同 CE 潜力中表现出不同的空间分布模式？
-
-# Rex motifs exhibit clear position-specific enrichment patterns across genomes 
-#with different CE potentials, with the strongest and most focused enrichment 
-#observed in high CE genomes, particularly for the ACAT module.
-
-#High CE genomes show a strong and highly localized enrichment of Rex motifs 
-#upstream of TSS, particularly for ACAT-associated genes, suggesting tight and 
-#position-specific transcriptional regulation.
-
-#In medium CE genomes, motif enrichment becomes more dispersed, with BCD-associated 
-#motifs showing moderate enrichment, indicating a less specialized and potentially 
-#transitional regulatory state.
-
-#Low CE genomes exhibit a diffuse and flattened motif distribution, lacking clear 
-#enrichment near TSS, suggesting weak or non-specific Rex-mediated regulation.
-
-#These results reveal a progressive transition from highly localized and module-specific 
-#Rex binding in high CE genomes to diffuse and non-specific distributions in low CE genomes, 
-#suggesting that regulatory precision rather than mere motif presence is associated with 
-#carbon chain elongation potential.
 
 p2 <- ggplot(dat_plot, aes(x=rel_pos, color=module, fill=module)) +
   
@@ -310,17 +285,7 @@ region_stat <- dat_region %>%
   mutate(prop = n/sum(n))
 
 ### 统计检验
-# 1、不同 CE_potential 水平下，region 的分布是否相同？
-#  卡方独立性检验
 chisq.test(table(dat_region$region, dat_region$CE_potential))
-# X-squared = 19.614, df = 4, p-value = 0.0005951
-# 即不同 CE_potential 组的 region 分布有显著差异。
-
-# 2、对每个region，比较不同 CE_potential 组的比例
-# To assess whether the proportions of promoter regions differed among CE potential groups, 
-# pairwise comparisons were performed using Fisher’s exact tests on 2 × 2 contingency tables 
-# constructed from region counts and non-region counts within each group. 
-# P values were adjusted for multiple testing using the Benjamini–Hochberg false discovery rate (FDR) method.
 
 total_df <- region_stat %>%
   group_by(CE_potential) %>%
@@ -761,24 +726,6 @@ forest_core
 
 ggsave("Rex_Fig04_OR_forest2.pdf", forest_core, width=5, height=5)
 
-#Coefficients:
-#  Estimate Std. Error z value Pr(>|z|)    
-#(Intercept)  0.169474   0.175566   0.965 0.334396    
-#ACAT         0.064970   0.042240   1.538 0.124021    
-#EtfAB       -0.053275   0.053809  -0.990 0.322135    
-#BCD          0.306568   0.082415   3.720 0.000199 ***
-#  HAD          0.003724   0.054490   0.068 0.945510  
-
-# Rex regulatory strength associated with BCD was significantly positively 
-# correlated with high CE potential (OR = 1.36, p = 0.035).
-# Rex likely regulates CE through redox-linked electron transfer pathways.
-
-# Module-specific regression analysis revealed that Rex regulation of EtfAB plays 
-# a dominant role in determining carbon chain elongation potential, whereas ACAT shows a marginal contribution and BCD appears to be non-determinant.
-
-# These results suggest that redox-linked regulation of electron transfer processes, 
-# rather than core carbon condensation steps alone, is a key determinant of CE potential.
-
 
 p3 <- ggplot(mag_stat,
              aes(x=rex_strength_sum,
@@ -829,17 +776,8 @@ full_model <- glm(CE_high ~ ACAT + EtfAB + BCD + HAD,
 step_model <- stepAIC(full_model,direction = "both",trace = FALSE)
 
 summary(step_model)
-#Coefficients:
-#  Estimate Std. Error z value Pr(>|z|)    
-#(Intercept)  0.10814    0.14852   0.728 0.466556    
-#ACAT         0.06985    0.04196   1.665 0.095993 .  
-#BCD          0.31723    0.08225   3.857 0.000115 ***
 
-exp(0.31723)
-# 1.373318
-# Rex regulatory strength associated with EtfAB was significantly positively correlated with CE potential (OR = 1.19, p = 0.0471).
-# 逐步回归分析筛选出EtfAB和ACAT为与碳链延长潜力相关的关键模块。其中，EtfAB表现出显著正相关，而ACAT呈现边缘显著。
-#结果表明，Rex调控主要通过与氧化还原相关的电子传递过程发挥作用，同时核心碳代谢过程可能具有辅助贡献。
+#exp(0.31723)
 
 coef_df <- tidy(step_model) %>%
   filter(term != "(Intercept)") %>%
@@ -880,12 +818,6 @@ boot_fn <- function(data, index){
 #============== 稳定性评估
 ### 置信区间
 confint(step_model)
-#Waiting for profiling to be done...
-#2.5 %     97.5 %
-#2.5 %    97.5 %
-#  (Intercept) -0.18337193 0.3995110
-# ACAT        -0.01026129 0.1546169
-# BCD          0.16894906 0.4936321
 
 ### 模型预测能力
 library(pROC)
@@ -896,13 +828,6 @@ roc_obj <- roc(mag_model$CE_high, prob)
 
 plot(roc_obj)
 auc(roc_obj)
-# Area under the curve: 0.6576
-
-#尽管EtfAB和ACAT在logistic回归模型中表现为正向系数，但其置信区间均跨越零，表明统计支持有限。模型预测能力较弱（AUC = 0.64），
-#提示Rex调控可能对碳链延长潜力具有一定贡献，但并非决定性因素。
-#该结果表明，Rex更可能作为一种情境依赖的调控因子，在基因表达调控中发挥精细调节作用，而非直接驱动碳链延长过程。
-
-
 
 #============================== Figure 05 ======================================
 #Figure 5 compares Rex regulatory strength across genomes with different CE potentials. 
@@ -968,13 +893,6 @@ p5 <- ggplot(mag_stat,
 p5
 
 ggsave("Rex_Fig05_strength_vs_CE.pdf", p5, width=4, height=5)
-
-
-
-
-
-
-
 
 
 
