@@ -16,8 +16,8 @@ library(dplyr)
 library(GenomicRanges)
 
 # 输入输出路径
-input_dir <- "~/Desktop/zhongke/Liu_metagenomic/Analysis/09_Rex_TF/fimo/original_fimo_out/local_MAGs_rBOX_fimo_out/"
-output_dir <- "~/Desktop/zhongke/Liu_metagenomic/Analysis/09_Rex_TF/fimo/fimo_filter/local"
+input_dir <- "local_MAGs_rBOX_fimo_out/"
+output_dir <- "local"
 dir.create(output_dir, showWarnings = FALSE, recursive = TRUE)
 
 file_list <- list.files(input_dir, pattern = "\\.txt$", full.names = TRUE)
@@ -29,10 +29,9 @@ process_fimo <- function(file_path) {
   base_name <- tools::file_path_sans_ext(basename(file_path))
   cat("正在处理:", basename(file_path), "\n")
   
-  # 预检文件大小
   if (file.size(file_path) == 0) {
     warning("文件 ", basename(file_path), " 大小为 0，已跳过。")
-    return(NA)   # 用 NA 表示跳过（非成功、非 NULL）
+    return(NA)
   }
   
   # 安全读取
