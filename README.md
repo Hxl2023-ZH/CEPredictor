@@ -125,14 +125,19 @@ Genome annotation matrix
 ## Example Project Structure
 
 ```
-tools/CEPredictor/
-	├── CEPredictor.R
-	├── README.md
-	├── merged_annotation.txt
-	├── MAG_annotation_test.txt
-	├── train_results/
-	│   └── models/
-	└── test_results/
+└── tools
+    ├── CEPredictor.R
+    ├── MAG_annotation_test.txt
+    ├── sessionInfo.txt
+    ├── test_result
+    │   ├── figures
+    │   ├── sessionInfo.txt
+    │   └── tables
+    └── train_result
+        ├── figures
+        ├── models
+        ├── sessionInfo.txt
+        └── tables
 ```
 
 This structure illustrates the command-line workflow and is not an exhaustive listing of automatically generated files.
@@ -150,7 +155,7 @@ Several considerations are important when interpreting predictions:
 
 ## Version History
 
-### v1.0.0 — 2026-10-22
+### v1.0.0 — 2026-10-24
 
 - Initial version of CEPredictor.
 - R6-based object-oriented implementation.
