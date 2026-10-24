@@ -6,7 +6,7 @@
 #
 # Author : Xinliang Hu
 # Version: 1.0.0
-# Date   : 2026-10-22
+# Date   : 2026-10-24
 #
 # Usage:
 #
@@ -46,9 +46,6 @@ suppressPackageStartupMessages({
 
 set.seed(2026)
 
-# rBOX is the mean of four module scores, three of which are 0/1 and one of
-# which is 0/0.5/1, so it only takes multiples of 0.125. `>= 0.625` therefore
-# is identical to `> 0.6` and includes MAGs sitting exactly on the boundary.
 RBOX_CUTOFF <- 0.625
 
 ################################################################################
@@ -365,7 +362,6 @@ CEModel <- R6Class(
 
       )
 
-      # xgboost >= 2.0 renamed `watchlist` to `evals`
       if("evals" %in% names(formals(xgb.train))){
 
         xgb_args$evals <- list(
