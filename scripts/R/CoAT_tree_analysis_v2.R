@@ -74,7 +74,7 @@ nearest_df$EPS <- 1 -
 
 write.csv(nearest_df, "results/CoAT_nearest_df.csv")
 
-#========== CoAT进化邻近性与链延长潜力相关
+#========= CoAT进化邻近性与链延长潜力相关
 nearest_df2 <- nearest_df %>% left_join(meta, by = c("MAG" = "SequenceID"))
 
 table(is.na(nearest_df2$CE_potential))
