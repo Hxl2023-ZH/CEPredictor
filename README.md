@@ -3,7 +3,7 @@
 **CEPredictor: A Machine Learning-Based Tool for Predicting Microbial Chain Elongation Potential**
 
 **Version:** 1.0.0
-**Release date:** October 22, 2026
+**Release date:** October 24, 2026
 **Language:** R
 **Architecture:** Object-oriented programming (R6) with a command-line interface (CLI)
 
