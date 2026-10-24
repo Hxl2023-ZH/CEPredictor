@@ -25,7 +25,7 @@ The tool is implemented using the R6 object-oriented programming framework and p
 Download or clone the CEPredictor repository and navigate to the project directory.
 
 ```
-git clone <repository-url>
+git clone https://github.com/Hxl2023-ZH/CEPredictor.git
 cd CEPredictor
 ```
 
